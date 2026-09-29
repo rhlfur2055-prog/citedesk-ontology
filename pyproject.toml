@@ -1,0 +1,35 @@
+[project]
+name = "citedesk"
+version = "0.2.0"
+description = "온톨로지로 검색을 넓히고 접근 등급으로 답을 가리는, 출처 붙는 문서 QA 서버 (SQLite FTS5 + Claude)"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "rhlfur2055-prog" }]
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=1.9.0",
+    "fastapi>=0.141.1",
+    "pydantic-settings>=2.15.0",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[project.scripts]
+citedesk = "citedesk.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+
+[build-system]
+requires = ["uv_build>=0.12.4,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+    "ruff>=0.16.9",
+]
