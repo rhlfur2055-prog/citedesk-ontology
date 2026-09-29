@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>citedesk · 온톨로지 3D</title>
+<style>
+  :root { --bg:#0b1220; --panel:#111a2e; --ink:#e6edf7; --mute:#8fa1bd; --line:#22304d;
+          --concept:#4fd1c5; --doc:#f6ad55; --restricted:#fc5c65; --team:#a78bfa; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 system-ui,"Malgun Gothic",sans-serif;
+         display:grid; grid-template-columns:320px 1fr; height:100vh; }
+  aside { background:var(--panel); border-right:1px solid var(--line); padding:16px; overflow:auto; }
+  h1 { font-size:16px; margin:0 0 4px; } .sub { color:var(--mute); font-size:12px; margin-bottom:14px; }
+  label { display:block; color:var(--mute); font-size:12px; margin:12px 0 4px; }
+  select, textarea, button { width:100%; background:#0b1220; color:var(--ink); border:1px solid var(--line);
+         border-radius:6px; padding:8px; font:inherit; }
+  textarea { resize:vertical; min-height:64px; } button { background:#e0424e; border:0; margin-top:10px; cursor:pointer; }
+  button:hover { filter:brightness(1.1); }
+  .row { display:flex; gap:8px; align-items:center; margin-top:8px; color:var(--mute); font-size:12px; }
+  .row input { width:auto; }
+  #answer { margin-top:14px; padding:10px; border:1px solid var(--line); border-radius:6px; white-space:pre-wrap; display:none; }
+  #answer.denied { border-color:var(--restricted); } #meta { color:var(--mute); font-size:12px; margin-top:6px; }
+  .legend { margin-top:16px; font-size:12px; color:var(--mute); }
+  .legend i { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; }
+  #stage { position:relative; overflow:hidden; } #graph { position:absolute; inset:0; }
+  .lb { position:absolute; transform:translate(-50%,-140%); font-size:11px; color:#cfe0f5; pointer-events:none;
+        white-space:nowrap; text-shadow:0 0 4px #000; }
+  .lb.hot { color:#fff; font-weight:700; font-size:13px; }
+  @media (max-width:760px){ body{grid-template-columns:1fr; grid-template-rows:auto 60vh;} }
+</style>
+</head>
+<body>
+<aside>
+  <h1>citedesk · 온톨로지 3D</h1>
+  <div class="sub">질문하면 연결된 개념과 근거 문서가 그래프에서 켜집니다.</div>
+  <label for="role">역할 (접근 등급이 달라집니다)</label>
+  <select id="role" onchange="location.search=`?role=`+this.value"><option value="employee">일반 직원</option><option value="hr">인사팀</option><option value="guest">외부인</option></select>
+  <label for="q">질문</label>
+  <textarea id="q">쉬는 날은 일 년에 며칠이나 생기나요?</textarea>
+  <div class="row"><input type="checkbox" id="onto" checked><label for="onto" style="margin:0">온톨로지 검색 확장 사용</label></div>
+  <button id="go">질문하기</button>
+  <div id="answer"></div><div id="meta"></div>
+  <div class="legend">
+    <div><i style="background:var(--concept)"></i>개념 (is_a로 연결)</div>
+    <div><i style="background:var(--doc)"></i>문서 (internal)</div>
+    <div><i style="background:var(--restricted)"></i>문서 (restricted)</div>
+    <div><i style="background:var(--team)"></i>담당 팀</div>
+  </div>
+</aside>
+<div id="stage"><div id="graph"></div></div>
+<script src="/vendor/3d-force-graph.min.js"></script>
+<script>
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const COLOR = n => n.kind==="concept" ? css("--concept") : n.kind==="team" ? css("--team")
+                 : n.level==="restricted" ? css("--restricted") : css("--doc");
+const hot = new Set(), labels = new Map();
+const stage = document.getElementById("stage");
+let G;
+
+const ROLE = new URLSearchParams(location.search).get("role") || "employee";
+document.getElementById("role").value = ROLE;
+fetch("/graph.json", { headers: { "X-Role": ROLE } }).then(r=>r.json()).then(data=>{
+  G = ForceGraph3D()(document.getElementById("graph"))
+    .graphData(data).backgroundColor(css("--bg")).showNavInfo(false)
+    .nodeColor(n => hot.has(n.id) ? "#ffffff" : COLOR(n))
+    .nodeVal(n => hot.has(n.id) ? 7 : n.kind==="document" ? 4 : n.kind==="team" ? 3 : 1.5)
+    .nodeOpacity(0.95).nodeLabel(n => `${n.label} (${n.kind})`)
+    .linkColor(l => hot.has(l.source.id) && hot.has(l.target.id) ? "#ffffff" : "#3a4a6b")
+    .linkOpacity(0.6).linkWidth(l => hot.has(l.source.id) && hot.has(l.target.id) ? 2 : 0.4)
+    .linkDirectionalParticles(l => hot.has(l.source.id) && hot.has(l.target.id) ? 4 : 0)
+    .linkDirectionalParticleWidth(2.5)
+    .onNodeClick(n => flyTo(n));
+  data.nodes.forEach(n => { const d = document.createElement("div"); d.className="lb"; d.textContent=n.label;
+                            stage.appendChild(d); labels.set(n.id, d); });
+  const step = () => {
+    const { width, height } = stage.getBoundingClientRect();
+    G.width(width).height(height);
+    G.graphData().nodes.forEach(n => {
+      const el = labels.get(n.id); if (n.x===undefined) return;
+      const p = G.graph2ScreenCoords(n.x, n.y, n.z);
+      el.style.left = p.x+"px"; el.style.top = p.y+"px";
+      el.classList.toggle("hot", hot.has(n.id));
+    });
+    requestAnimationFrame(step);
+  };
+  step();
+  // 천천히 도는 카메라: 3D 라는 게 한눈에 보이도록
+  let ang = 0; const dist = 420;
+  setInterval(() => { if (hot.size) return; ang += Math.PI/1200;
+    G.cameraPosition({ x: dist*Math.sin(ang), z: dist*Math.cos(ang) }); }, 30);
+});
+
+function flyTo(n, d=230) {
+  const r = 1 + d/Math.hypot(n.x, n.y, n.z);
+  G.cameraPosition({x:n.x*r, y:n.y*r, z:n.z*r}, n, 1200);
+}
+
+document.getElementById("go").onclick = async () => {
+  const out = document.getElementById("answer"), meta = document.getElementById("meta");
+  out.style.display="block"; out.className=""; out.textContent="…";
+  const res = await fetch("/ask", { method:"POST",
+    headers:{ "Content-Type":"application/json", "X-Role": ROLE },
+    body: JSON.stringify({ question: document.getElementById("q").value, use_ontology: document.getElementById("onto").checked })});
+  const a = await res.json();
+  if (!res.ok) { out.textContent = a.detail || "오류"; return; }
+  out.textContent = a.answer; out.classList.toggle("denied", a.denied);
+  meta.textContent = `개념: ${a.concepts.map(c=>c.label).join(", ") || "없음"}  ·  인용: ${a.citations.map(c=>c.source).join(", ") || "없음"}`;
+  hot.clear();
+  a.concepts.forEach(c => { hot.add(c.id); if (c.doc) hot.add(c.doc); });
+  a.citations.forEach(c => hot.add(c.source));
+  G.graphData(G.graphData());  // 색·굵기 다시 계산
+  const target = G.graphData().nodes.find(n => hot.has(n.id) && n.kind==="document");
+  if (target) flyTo(target, 260);
+};
+</script>
+</body>
+</html>
