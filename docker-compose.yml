@@ -1,0 +1,8 @@
+services:
+  citedesk:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # 키 없이 뜬다. 실제 모델을 쓰려면 false 로 바꾸고 ANTHROPIC_API_KEY 를 넘긴다.
+      CITEDESK_USE_FAKE_LLM: "true"
