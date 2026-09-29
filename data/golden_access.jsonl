@@ -1,0 +1,7 @@
+{"question": "주니어 개발자 연봉 밴드가 얼마인가요?", "source": null, "keywords": [], "role": "employee", "expect": "denied"}
+{"question": "성과급은 언제 얼마나 지급되나요?", "source": null, "keywords": [], "role": "employee", "expect": "denied"}
+{"question": "시니어 개발자 월급 범위를 알려주세요", "source": null, "keywords": [], "role": "guest", "expect": "denied"}
+{"question": "주니어 개발자 연봉 밴드가 얼마인가요?", "source": "payroll.md", "keywords": ["4,000만원"], "role": "hr"}
+{"question": "성과급은 언제 얼마나 지급되나요?", "source": "payroll.md", "keywords": ["3월"], "role": "hr"}
+{"question": "연차는 며칠 전까지 신청해야 하나요?", "source": "vacation.md", "keywords": ["3영업일"], "role": "employee"}
+{"question": "점심 식대 한도가 얼마인가요?", "source": "expense.md", "keywords": ["12,000원"], "role": "employee"}

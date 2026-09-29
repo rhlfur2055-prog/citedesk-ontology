@@ -1,0 +1,156 @@
+# 사내 규정 온톨로지.
+#   aliases = 사람들이 질문에 쓰는 말   /  terms = 문서가 실제로 쓰는 말(3글자 이상, 검색 확장에 쓰임)
+#   parent  = is_a 관계                /  governed_by = 이 개념을 규율하는 문서 (없으면 부모에서 상속)
+# 문서에는 접근 등급(level)과 담당 팀(owner)이 붙고, 역할(role)은 볼 수 있는 등급을 가진다.
+# 여기 없는 문서는 가장 엄격한 등급(restricted)으로 취급한다 (fail-closed).
+
+[roles.guest]
+label = "외부인"
+levels = ["public"]
+
+[roles.employee]
+label = "일반 직원"
+levels = ["public", "internal"]
+
+[roles.hr]
+label = "인사팀"
+levels = ["public", "internal", "restricted"]
+
+[documents."vacation.md"]
+level = "internal"
+owner = "인사팀"
+
+[documents."onboarding.md"]
+level = "internal"
+owner = "인사팀"
+
+[documents."expense.md"]
+level = "internal"
+owner = "재무팀"
+
+[documents."security.md"]
+level = "internal"
+owner = "보안팀"
+
+[documents."payroll.md"]
+level = "restricted"
+owner = "인사팀"
+
+# ---- 휴가 ----
+[concepts.leave]
+label = "휴가"
+aliases = ["휴가", "휴무", "쉴 수", "쉬려면"]
+terms = ["유급 휴가"]
+governed_by = "vacation.md"
+
+[concepts.annual_leave]
+label = "연차"
+parent = "leave"
+aliases = ["연차", "연가", "쉬는 날", "휴가 일수"]
+terms = ["연차휴가", "연차는", "연차가", "연차를"]
+
+[concepts.sick_leave]
+label = "병가"
+parent = "leave"
+aliases = ["병가", "아파서", "몸이 안", "아플 때", "진단서"]
+terms = ["병가는", "진단서"]
+
+[concepts.family_event_leave]
+label = "경조사 휴가"
+parent = "leave"
+aliases = ["경조사", "결혼", "출산", "장례", "사망"]
+terms = ["경조사 휴가", "결혼은", "출산은", "사망 시"]
+
+# ---- 경비 ----
+[concepts.expense_item]
+label = "경비"
+aliases = ["경비", "비용"]
+terms = ["경비는"]
+governed_by = "expense.md"
+
+[concepts.meal_allowance]
+label = "식대"
+parent = "expense_item"
+aliases = ["식대", "점심값", "밥값", "점심", "저녁값"]
+terms = ["점심 식대", "저녁 식대"]
+
+[concepts.transport]
+label = "교통비"
+parent = "expense_item"
+aliases = ["교통", "택시", "귀가", "자가용", "유류", "기름값", "KTX"]
+terms = ["교통비", "택시는", "유류비", "귀가하는"]
+
+[concepts.overseas_trip]
+label = "해외 출장"
+parent = "expense_item"
+aliases = ["해외", "출국", "외국 출장"]
+terms = ["해외 출장", "일비", "항공권"]
+
+[concepts.expense_claim]
+label = "경비 정산"
+parent = "expense_item"
+aliases = ["정산", "청구", "환급"]
+terms = ["정산되지", "청구해야"]
+
+# ---- 정보보안 ----
+[concepts.security_policy]
+label = "정보보안"
+aliases = ["보안"]
+terms = ["보안팀"]
+governed_by = "security.md"
+
+[concepts.credential]
+label = "인증정보"
+parent = "security_policy"
+aliases = ["비밀번호", "패스워드", "암호", "로그인"]
+terms = ["비밀번호"]
+
+[concepts.removable_media]
+label = "외부 저장장치"
+parent = "security_policy"
+aliases = ["USB", "이동식", "외장", "메모리 꽂", "저장장치", "플래시"]
+terms = ["외부 저장장치", "저장장치는"]
+
+[concepts.security_incident]
+label = "보안 사고"
+parent = "security_policy"
+aliases = ["유출", "새어", "해킹", "침해", "신고"]
+terms = ["정보 유출", "사고 신고", "보안팀 핫라인"]
+
+[concepts.remote_work]
+label = "원격 근무"
+parent = "security_policy"
+aliases = ["재택", "집에서 일", "원격", "와이파이", "VPN"]
+terms = ["재택근무", "VPN"]
+
+# ---- 온보딩 ----
+[concepts.onboarding_topic]
+label = "온보딩"
+aliases = ["입사", "신입", "온보딩"]
+terms = ["온보딩", "오리엔테이션"]
+governed_by = "onboarding.md"
+
+[concepts.probation]
+label = "수습"
+parent = "onboarding_topic"
+aliases = ["수습", "시용", "인턴", "정규직 전환", "적응 기간"]
+terms = ["수습 기간", "정규직으로 전환"]
+
+[concepts.work_hours]
+label = "근무 시간"
+parent = "onboarding_topic"
+aliases = ["출퇴근", "출근 시각", "근무 시간", "유연근무", "지각"]
+terms = ["근무 시간", "출근 시간"]
+
+[concepts.equipment]
+label = "장비"
+parent = "onboarding_topic"
+aliases = ["컴퓨터", "노트북", "모니터", "장비", "사원증"]
+terms = ["노트북", "모니터"]
+
+# ---- 급여 (restricted) ----
+[concepts.salary_band]
+label = "급여 밴드"
+aliases = ["연봉", "급여", "월급", "성과급", "보너스", "밴드"]
+terms = ["연봉 밴드", "성과급"]
+governed_by = "payroll.md"
